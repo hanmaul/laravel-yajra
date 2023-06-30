@@ -23,4 +23,4 @@ Route::get('/', function () {
 Route::resource('products', ProductController::class);
 
 //route posts
-Route::get('posts', [PostController::class, 'index'])->name('posts.index');
+Route::resource('posts', PostController::class);
