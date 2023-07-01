@@ -16,25 +16,44 @@ class PostController extends Controller
      */
     public function index()
     {
-        // if ($request->ajax()) {
-        //     $post = Post::select('id', 'pict', 'title', 'content')->get();
-        //     return DataTables::of($post)
-        //         ->addIndexColumn()
-        //         ->addColumn('action', function ($data) {
-        //             $button = '<button type="button" name="edit" id="' . $data->id . '" class="edit btn btn-primary btn-sm"><i class="bi bi-pencil-square"></i>Edit</button>';
-        //             $button .= '<button type="button" name="delete" id="' . $data->id . '" class="delete btn btn-danger btn-sm"><i class="bi bi-backspace-reverse-fill"></i>Delete</button>';
-        //             return $button;
-        //         })
-        //         ->make(true);
-        // }
-
         return view('post.index');
     }
 
-    public function fetchAll()
+    public function getAll()
     {
         $post = Post::all();
         $output = '';
+        if ($post->count() > 0) {
+            $output .= '
+            <table class="table table-striped align-middle">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Picture</th>
+                        <th>Title</th>
+                        <th>Content</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>';
+            foreach ($post as $rs) {
+            $output .= '
+            <tr>
+                <td>' . $rs->id . '</td>
+                <td><img src="storage/images/' . $rs->pict . '" width="50" class="img-thumbnail rounded-circle"></td>
+                <td>' . $rs->title . '</td>
+                <td>' . $rs->content . '</td>
+                <td>
+                    <a href="#" id="' . $rs->id . '" class="text-warning mx-1 editIcon" data-bs-toggle="modal" data-bs-target="#editPost"><i class="bi-pencil-square h4"></i></a>
+                    <a href="#" id="' . $rs->id . '" class="text-danger mx-1 deleteIcon"><i class="bi-trash h4"></i></a>
+                </td>
+            </tr>'; 
+            }              
+            $output .= '</tbody></table>';
+            echo $output;
+        } else {
+            echo '<h1 class="text-center text-secondary my-5">No Post available!</h1>';
+        }
     }
 
     /**
@@ -55,35 +74,24 @@ class PostController extends Controller
      */
     public function store(Request $request)
     {
-        //Validasi
-        $rules = array(
-            'title'  => 'required',
-            'content' => 'required',
-            'pict'  => 'required|image|mimes:jpeg,jpg,png|max:2048'
-        );
-
-        //Jika tidak sesuai validasi
-        $error = Validator::make($request->all(), $rules);
-
-        if ($error->fails()) {
-            return response()->json(['errors' => $error->errors()->all()]);
-        }
-
-        //Upload pict
+        //upload Pict
         $file = $request->file('pict');
         $fileName = time() . '.' . $file->getClientOriginalExtension();
         $file->storeAs('public/images', $fileName);
 
-        //Jika sesuai validasi  
-        $form_data = [
+        //get input from value in view 
+        $post = [
             'title' => $request->title,
             'content' => $request->content,
             'pict' => $fileName
         ];
-
-        Post::create($form_data);
-
-        return response()->json(['success' => 'Data Added Successfully!']);
+        
+        //insert to DB
+        Post::create($post);
+        
+        return response()->json([
+            'status' => 200,
+        ]);
     }
 
     /**
